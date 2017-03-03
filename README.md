@@ -29,5 +29,5 @@ N/A | MOSI | 11 | SPI Master Output Slave Input
 N/A | MISO | 12 | SPI Master Input Slave Output
 VCC | VCC | 5V | 5V Power Supply
 GND | GND | GND | Common Ground
-OUT | N/A | A1 | Analog
-DOUT | N/A | 2 | Digital In
+OUT | N/A | A1 | Analog In
+D | N/A | 2 | Digital In

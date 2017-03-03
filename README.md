@@ -10,10 +10,10 @@ The MG811 (CO2 sensor) sketch is all contained in the [`MG811_Sensor.ino`](https
 MG811 Sensor | MicroSD Adapter | Arduino Pin | Details
 -------------|-----------------|-------------|--------
 N/A | CS | 10 | Chip Select
-N/A | SCK | 11 | Clock
-N/A | MOSI | 12 | SPI Data
-N/A | MISO | 13 | SPI Data
+N/A | SCK | 13 | Clock
+N/A | MOSI | 11 | SPI Data
+N/A | MISO | 12 | SPI Data
 VCC | VCC | 5V | Power
 GND | GND | GND | Common Ground
-OUT | N/A | A1 | Analog In
+OUT | N/A | A1 | Analog
 DOUT | N/A | 2 | Digital In

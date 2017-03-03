@@ -1,9 +1,9 @@
 # SmartStreetlight
 Arduino sketches that control sensors for a Capstone project
 
-## Camera Sensor
+## OV5642 Sensor
 
-The Camera sketch is all contained in the [`filename goes here'](https://google.com) file. This controller uses an [Arduino Uno](https://store-usa.arduino.cc/products/a000066) board, an [ArduCAM Mini 5MP Plus OV5642](https://www.amazon.com/Arducam-Module-Camera-Arduino-Mega2560/dp/B013JUKZ48), and a [Catalex MicroSD Card Adapter](https://www.amazon.com/gp/product/B00SL0QWDU/ref=oh_aui_detailpage_o00_s00?ie=UTF8&psc=1). The board layout is as follows:
+The Camera sketch is all contained in the [`OV5642_Sensor.ino`](https://github.com/mcculloh213/SmartStreetlight/blob/master/OV5642_Sensor/OV5642_Sensor.ino) file. This controller uses an [Arduino Uno](https://store-usa.arduino.cc/products/a000066) board, an [ArduCAM Mini 5MP Plus OV5642](https://www.amazon.com/Arducam-Module-Camera-Arduino-Mega2560/dp/B013JUKZ48), and a [Catalex MicroSD Card Adapter](https://www.amazon.com/gp/product/B00SL0QWDU/ref=oh_aui_detailpage_o00_s00?ie=UTF8&psc=1). The board layout is as follows:
 
 OV5642 | MicroSD Adapter | Arduino Pin | Details
 -------|-----------------|-------------|--------
@@ -13,7 +13,7 @@ SCLK | SCK | 13 | SPI Serial Clock
 MOSI | MOSI | 11 | SPI Master Output Slave Input
 MISO | MISO | 12 | SPI Master Input Slave Output
 SDA | N/A | (I2C) SDA | Two-Wire Serial Interface Data I/O
-SCL | N/A | (I2C) SCLV | Two-Wire Serial Interface Clock
+SCL | N/A | (I2C) SCL | Two-Wire Serial Interface Clock
 +5V | VCC | 5V | 5V Power Supply
 GND | GND | GND | Common Ground
 

@@ -8,6 +8,8 @@
  *   to use only the OV5642 sensor.
  */
 
+/************************Libraries**************************************************/
+
 #include <ArduCAM.h>
 #include <Wire.h>
 #include <SPI.h>

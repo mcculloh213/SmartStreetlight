@@ -31,3 +31,17 @@ VCC | VCC | 5V | 5V Power Supply
 GND | GND | GND | Common Ground
 OUT | N/A | A1 | Analog In
 D | N/A | 2 | Digital In
+
+## Light Dimmer
+
+The light dimmer is a custom configured circuit paired with a photocell with a 10K pull down resistor and a [Keyestudio PIR Motion Sensor](http://www.keyestudio.cc/h-pd-104.html). The custom circuit uses a Triac to
+
+Below is a table of how readings are measured by the photocell.
+
+Description | Lux | LDR (Light Dependent Resistor) | PDR (Pull Down Resistor) | Total Resistance | V (+3.3) | Current | Voltage Across PDR
+------------|-----|--------------------------------|--------------------------|------------------|----------|---------|-------------------
+Dim hallway | 0.1 | 600K | 10K | 610K | 3.3V | 0.005mA | 0.054V
+Moonlit night | 1 | 70K | 10K | 80K | 3.3V | 0.041mA | 0.413V
+Dark room | 10 | 10K | 10K | 20K | 3.3V | 0.165mA | 1.65V
+Dark overcast day \ Bright room | 100 | 1.5K | 10K | 11.5K | 3.3V | 0.287mA | 2.870V
+Overcast day | 1000 | 300 | 10K | 10.3K | 3.3V | 0.320mA | 3.204V

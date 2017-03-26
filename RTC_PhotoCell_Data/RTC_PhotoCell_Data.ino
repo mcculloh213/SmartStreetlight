@@ -111,7 +111,7 @@ void loop() {
   if (rtc.second() != lastSecond) {
     pc = photoCellReading();
     if (mFile) {
-      mFile.println(getTime() + "," + String(pc) + "," + variableBrightnessPct(pc) + "," + classification(pc));
+      mFile.println(millis() + "," + String(pc) + "," + variableBrightnessPct(pc) + "," + classification(pc));
     }
 
     lastSecond = rtc.second();

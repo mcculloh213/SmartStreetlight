@@ -5,7 +5,7 @@
  *          Catalex MicroSD Card Adapter
  *
  * This sketch operates the DFRobot MG811 CO2 sensor module and writes data to an
- *   attached SD card.CO2 concentration is read via a voltage rise or drop on the
+ *   attached SD card. CO2 concentration is read via a voltage rise or drop on the
  *   sensor and CO2 concentration (in ppm) can be derived using the CO2 sensitivity
  *   curve found here:
  *      http://image.dfrobot.com/image/data/SEN0159/CO2b%20MG811%20datasheet.pdf

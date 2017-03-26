@@ -112,6 +112,10 @@ void takePicture() {
       Serial.print("\n");
     }
     return;
+  } else {
+    if (Serial) {
+      Serial.println("File: " + String(str) + " opened.");
+    }
   }
 
   mCamera.CS_LOW();
@@ -133,7 +137,7 @@ void takePicture() {
       /* Close and save out file */
       out.close();
 
-      /* DEBUF */
+      /* DEBU */
       if (Serial) {
         Serial.println("Image saved");
       }
@@ -182,6 +186,10 @@ void setup() {
   uint8_t vid;
   uint8_t pid;
   uint8_t temp;
+
+  if (Serial) {
+    Serial.println("Running setup");
+  }
 
   Wire.begin();
   Serial.begin(115200);
@@ -251,6 +259,10 @@ void setup() {
  */
 void loop() {
 
+  if (Serial) {
+    Serial.println("Taking picture.");
+  }
+ 
   takePicture();
   /* Wait 0.5s before taking next picture */
   delay(500);

@@ -25,7 +25,7 @@
 
 /************************Hardware Related Macros************************************/
 
-#define MG811_PIN             0         /**
+#define MG811_PIN             A0        /**
                                          *  Analog input channel
                                          */
 
@@ -77,7 +77,7 @@
                                           *    CO2 concentration is 10,000ppm
                                           */
 
-#define REACTION_VOLTAGE     0.059       /**
+#define REACTION_VOLTAGE     0.265       /**
                                           *  Sensor voltage drop --
                                           *    Sensor is moved "from air into 
                                           *    1,000ppm of CO2
@@ -101,7 +101,7 @@
  *         --------- ==> --------------------
  *         (x1 - x2)     (log400 - log10,000)
  */
-float CO2_Curve[3] = { ZERO_POINT_X, ZERO_POINT_VOLTAGE, (REACTION_VOLTAGE / (2.602 - 4)) };
+float CO2_Curve[3] = { ZERO_POINT_X, ZERO_POINT_VOLTAGE, (REACTION_VOLTAGE / (2.602 - 3)) };
 
 /**
  *  Percentage
@@ -234,7 +234,7 @@ int getPpm(float voltage, float *pcurve) {
 
   voltage = voltage / DC_GAIN;
 
-  if (voltage <= ZERO_POINT_VOLTAGE || voltage >= MAX_POINT_VOLTAGE) {
+  if (voltage <= ZERO_POINT_VOLTAGE) {
     ppm = pow(10, (voltage - pcurve[1]) / pcurve[2] + pcurve[0]);
   }
 
@@ -259,8 +259,8 @@ void setup() {
 
   Serial.begin(9600);
   flag_sd = bootSD(CHIP_SELECT, FILE_NAME);
-  pinMode(BOOL_PIN, INPUT);
-  digitalWrite(BOOL_PIN, HIGH);
+//  pinMode(BOOL_PIN, INPUT);
+//  digitalWrite(BOOL_PIN, HIGH);
 
 }
 
@@ -284,6 +284,8 @@ void loop() {
 
   /* DEBUG: Print data to the console while connected to a computer */
   if (Serial) {
+    Serial.print(flag_sd);
+    Serial.print(" -- ");
     Serial.print("Sensor: ");
     Serial.print(volts);
     Serial.print("V\t\t");
@@ -311,12 +313,12 @@ void loop() {
     }
     Serial.print( "\t\tTime point:" );
     Serial.print(millis());
-    Serial.print("\n");
-    if (digitalRead(BOOL_PIN) ) {
-      Serial.print( "===== BOOL is 1 ======" );
-    } else {
-      Serial.print( "===== BOOL is 0 ======" );
-    }
+//    Serial.print("\n");
+//    if (digitalRead(BOOL_PIN) ) {
+//      Serial.print( "===== BOOL is 1 ======" );
+//    } else {
+//      Serial.print( "===== BOOL is 0 ======" );
+//    }
     Serial.print("\n");
   }
 

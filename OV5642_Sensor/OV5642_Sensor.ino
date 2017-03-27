@@ -188,7 +188,7 @@ void setup() {
   uint8_t temp;
 
   if (Serial) {
-    Serial.println("Running setup");
+    Serial.println(F("Running setup"));
   }
 
   Wire.begin();

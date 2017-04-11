@@ -7,7 +7,7 @@
 void setup() {
   Serial.begin(9600);
   rtc.begin(RTC_PIN);
-  rtc.set12Hour();
+//  rtc.set12Hour();
   rtc.autoTime();
   rtc.update();
 }

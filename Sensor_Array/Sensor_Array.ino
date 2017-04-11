@@ -43,7 +43,7 @@
                                          *  be high
                                          */
 
-#define RTC_PIN               4         /**
+#define RTC_PIN               5         /**
                                          * Arduino DeadOn DS3234 RTC
                                          */
 
@@ -62,7 +62,7 @@
                                          *  D13 - UNO
                                          */
 
-#define SD_PIN                53        /**
+#define SD_PIN                4        /**
                                          *  Slave Select pin
                                          *  D10 - UNO
                                          */
@@ -105,7 +105,7 @@
                                          *  Time interval (ms) between each sample
                                          */
 
-#define FILE_NAME          "Snrs.csv"   /**
+#define FILE_NAME          "SNRS.txt"   /**
                                          *  File name on SD card
                                          */
 
@@ -295,6 +295,34 @@ float getMQ4ppm(float voltage) {
   
 }
 
+String classification(float pc_read) {
+  if (pc_read <= 50) {
+    return "Dark";
+  } else if (pc_read > 50 && pc_read <= 200) {
+    return "Dim";
+  } else if (pc_read > 200 && pc_read <= 300) {
+    return "Light";
+  } else if (pc_read > 300 && pc_read <= 800) {
+    return "Bright";
+  } else {
+    return "I might as well be staring at the surface of the sun";
+  }
+}
+
+int variableBrightnessPct(float pc_read) {
+  if (pc_read <= 50) {
+    return 75;
+  } else if (pc_read > 50 && pc_read <= 200) {
+    return 50;
+  } else if (pc_read > 200 && pc_read <= 300) {
+    return 25;
+  } else if (pc_read > 300 && pc_read <= 800) {
+    return 0;
+  } else {
+    return -1;
+  }
+}
+
 /**
  * Function: bootSD
  * ----------------
@@ -392,6 +420,7 @@ void closeFile() {
 void setup() {
   Serial.begin(9600);
   rtc.begin(RTC_PIN);
+//  rtc.autoTime();
   flag_sd = bootSD();
   rtc.update();
 }
@@ -435,6 +464,33 @@ void loop() {
       dataFile.print("\t");
       dataFile.print(String(avg_ldr));
       dataFile.print("\t");
+      dataFile.print(String(variableBrightnessPct(avg_ldr)));
+      dataFile.print("\t");
+      dataFile.print(classification(avg_ldr));
+      dataFile.print("\n");
     }
-  } 
+    if (Serial) {
+      Serial.print(String(timestamp));
+      Serial.print("\t");
+      Serial.print(String(avg_co2));
+      Serial.print("\t");
+      Serial.print(String(getMG811ppm(avg_co2, CO2_Curve)));
+      Serial.print("\t");
+      Serial.print(String(avg_ch4));
+      Serial.print("\t");
+      Serial.print(String(getMQ4ppm(avg_ch4)));
+      Serial.print("\t");
+      Serial.print(String(avg_ldr));
+      Serial.print("\t");
+      Serial.print(String(variableBrightnessPct(avg_ldr)));
+      Serial.print("\t");
+      Serial.print(classification(avg_ldr));
+      if (flag_sd) {
+        Serial.print("\t");
+        Serial.print("Data written to file");
+      }
+      Serial.print("\n");
+    }
+  }
+  delay(5000); 
 }

@@ -70,6 +70,29 @@
                                          *  DC Gain of the amplifier
                                          */
 
+/* These values will vary from sensor to sensor -- these are the default values. */
+
+#define ZERO_POINT_X         2.602       /**
+                                          *  lg400 = 2.602 --
+                                          *    Origin point of x-axis on curve
+                                          */
+
+#define ZERO_POINT_VOLTAGE   0.324       /**
+                                          *  Sensor output (V) -- 
+                                          *    CO2 concentration is 400ppm.
+                                          */
+
+#define MAX_POINT_VOLTAGE    0.265       /**
+                                          *  Sensor output (V) --
+                                          *    CO2 concentration is 10,000ppm
+                                          */
+
+#define REACTION_VOLTAGE     0.265       /**
+                                          *  Sensor voltage drop --
+                                          *    Sensor is moved "from air into 
+                                          *    1,000ppm of CO2
+                                          */
+
 #define READ_SAMPLE_INTERVAL  50        /**
                                          *  Samples taken in a cycle
                                          */
@@ -84,9 +107,37 @@
 
 /**************************************Globals**************************************/
 
+/**
+ * Two points are taken from the CO2 curve. A line is formed using these two points
+ *   as a way of approximating the curve. Other approximation methods may be used
+ *   to get a better estimate.
+ * --------------------------------------------------------------------------------
+ * CO2 Curve Format:
+ *     { x, y, slope }
+ *     Point 1:
+ *         (log400 = 2.602, 0.324)
+ *     Point 2:
+ *         (log10,000 = 4, 0.265)
+ *     Slope:
+ *         (y1 - y2)        (0.324 - 0.265)
+ *         --------- ==> --------------------
+ *         (x1 - x2)     (log400 - log10,000)
+ */
+float CO2_Curve[3] = { ZERO_POINT_X, ZERO_POINT_VOLTAGE, (REACTION_VOLTAGE / (2.602 - 3)) };
+
+/**
+ * MQ-4 sensor resistance
+ */
+float Rs;
+
+/**
+ * MQ-4 sensor resistance in clean air
+ */
+volatile float Ro;
+
 volatile int flag_sd;
 
-volatile String timestamp;
+String timestamp;
 
 volatile float avg_co2;
 
@@ -94,9 +145,9 @@ volatile float avg_ch4;
 
 volatile float avg_ldr;
 
-volatile File dataFile;                 /**
-                                         *  File variable for data logging
-                                         */
+File dataFile;                                 /**
+                                                *  File variable for data logging
+                                                */
 
 /**
  * Function: MG811Reading
@@ -140,6 +191,7 @@ int photoCellReading() {
  * returns: MM/DD/YYYY-HH:MM:SSSS xM
  */
 String DS3234timestamp() {
+  
   String ts = "";
 
   ts += String(rtc.date());
@@ -147,7 +199,7 @@ String DS3234timestamp() {
   ts += String(rtc.month());
   ts += "/";
   ts += String(rtc.year());
-  ts += "-";
+  ts += "\t";
   ts += String(rtc.hour());
   ts += ":";
   if (rtc.minute() < 10) {
@@ -155,14 +207,88 @@ String DS3234timestamp() {
   }
   ts += String(rtc.minute());
   ts += ":";
-  ts += String(rtc.second());
-  if (rtc.pm()) {
-    ts += " PM";
-  } else {
-    ts += " AM";
+  if (rtc.second() < 10) {
+    ts += "0";
   }
+  ts += String(rtc.second());
 
   return ts;
+}
+
+/**
+ * Function: getMG811ppm
+ * ---------------------
+ * Convert the average output voltage of the sensor module to CO2 concentration
+ * in parts per million (ppm)
+ *
+ * voltage: Average output voltage of the CO2 module
+ *  pcurve: Pointer to the CO2 curve
+ *
+ * returns: CO2 concentration in parts per million (ppm)
+ */
+int getMG811ppm(float voltage, float *pcurve) {
+
+  int ppm = -1;
+
+  voltage = voltage / DC_GAIN;
+
+  if (voltage <= ZERO_POINT_VOLTAGE) {
+    ppm = pow(10, (voltage - pcurve[1]) / pcurve[2] + pcurve[0]);
+  }
+
+  voltage = 0;
+
+  return ppm;
+
+}
+
+/**
+ * Function: estimateRo
+ * --------------------
+ */
+void estimateRo() {
+  
+  float Vs = 0;
+  float Vavg;
+
+  for (int i = 0; i < 1000; i++) {
+    Vs += analogRead(MQ4_PIN);
+  }
+
+  Vavg = Vs / (1000.00);
+  avg_ch4 = Vavg * (5.00 / 1023.00);
+  Rs = ((5.0 * 10.0) / avg_ch4) - 10;
+  Ro = Rs / 4.4;
+  
+}
+
+/**
+ * Function: getMQ4ppm
+ * -------------------
+ * Convert the average output voltage of the sensor module to CH4 concentration
+ * in parts per million (ppm)
+ *
+ * voltage: Average output voltage of the CH4 module
+ *
+ * returns: CH4 concentration in parts per million (ppm)
+ */
+float getMQ4ppm(float voltage) {
+  float ratio;
+  float pct;
+  float ppm_log;
+  float ppm;
+  float m = -0.318; //Slope
+  float b = 1.133;  //Y-Intercept
+
+  Rs = ((5.0 * 10.0) / voltage) - 10;
+  ratio = Rs / Ro;
+
+  ppm_log = (log10(ratio) - b) / m;
+  ppm = pow(10, ppm_log);
+  pct = ppm / 10000;
+
+  return ppm;
+  
 }
 
 /**
@@ -190,7 +316,9 @@ int bootSD() {
 
     if (dataFile) {
       if (!SD.exists(FILE_NAME)) {
-        dataFile.print("Timestamp");
+        dataFile.print("Timestamp Date");
+        dataFile.print("\t");
+        dataFile.print("Timestamp Time");
         dataFile.print("\t");
         dataFile.print("MG811 Voltage");
         dataFile.print("\t");
@@ -247,6 +375,8 @@ void closeFile() {
   dataFile.close();
 }
 
+
+
 /**
  * Function: setup
  * ---------------
@@ -258,6 +388,7 @@ void closeFile() {
 void setup() {
   Serial.begin(9600);
   flag_sd = bootSD();
+  rtc.update();
 }
 
 /**
@@ -266,36 +397,39 @@ void setup() {
  * Runs activity in a loop after initial setup.
  */
 void loop() {
-  // put your main code here, to run repeatedly:
+  static volatile int8_t lastSecond = -1;
   avg_co2 = 0;
   avg_ch4 = 0;
   avg_ldr = 0;
-  timestamp = DS3234timestamp();
+  rtc.update();
+  if (rtc.second() != lastSecond) {
+    timestamp = DS3234timestamp();
 
-  openFile();
+    openFile();
   
-  for (int i = 0; i < READ_SAMPLE_INTERVAL; i++) {
-    avg_co2 += MG811Reading();
-    avg_ch4 += MQ4Reading();
-    avg_ldr += photoCellReading();
-  }
+    for (int i = 0; i < READ_SAMPLE_INTERVAL; i++) {
+      avg_co2 += MG811Reading();
+      avg_ch4 += MQ4Reading();
+      avg_ldr += photoCellReading();
+    }
 
-  avg_co2 /= READ_SAMPLE_INTERVAL;
-  avg_ch4 /= READ_SAMPLE_INTERVAL;
-  avg_ldr /= READ_SAMPLE_INTERVAL;
+    avg_co2 /= READ_SAMPLE_INTERVAL;
+    avg_ch4 /= READ_SAMPLE_INTERVAL;
+    avg_ldr /= READ_SAMPLE_INTERVAL;
 
-  if (flag_sd) {
-    dataFile.print(String(timestamp));
-    dataFile.print(",");
-    dataFile.print(String(avg_co2));
-    dataFile.print(",");
-    dataFile.print();
-    dataFile.print(",");
-    dataFile.print(String(avg_ch4));
-    dataFile.print(",");
-    dataFile.print();
-    dataFile.print(",");
-    dataFile.print(String(avg_ldr));
-    dataFile.print(",");
-  }
+    if (flag_sd) {
+      dataFile.print(String(timestamp));
+      dataFile.print("\t");
+      dataFile.print(String(avg_co2));
+      dataFile.print("\t");
+      dataFile.print(String(getMG811ppm(avg_co2, CO2_Curve)));
+      dataFile.print("\t");
+      dataFile.print(String(avg_ch4));
+      dataFile.print("\t");
+      dataFile.print(String(getMQ4ppm(avg_ch4)));
+      dataFile.print("\t");
+      dataFile.print(String(avg_ldr));
+      dataFile.print("\t");
+    }
+  } 
 }

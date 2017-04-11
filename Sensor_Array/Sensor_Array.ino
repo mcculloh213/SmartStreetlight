@@ -43,6 +43,10 @@
                                          *  be high
                                          */
 
+#define RTC_PIN               4         /**
+                                         * Arduino DeadOn DS3234 RTC
+                                         */
+
 #define MISO_PIN              50        /**
                                          *  Master In Slave Out pin
                                          *  D12 - UNO
@@ -387,6 +391,7 @@ void closeFile() {
  */
 void setup() {
   Serial.begin(9600);
+  rtc.begin(RTC_PIN);
   flag_sd = bootSD();
   rtc.update();
 }

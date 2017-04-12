@@ -25,6 +25,7 @@ void strobe(int led_pin, int duration, int strobes) {
     digitalWrite(led_pin, HIGH);
     delay(duration);
     digitalWrite(led_pin, LOW);
+    delay(duration);
   }
 }
 
@@ -100,7 +101,7 @@ void loop() {
     sos(YLW_LED);
     flash(GRN_LED, 1000);
   } else {
-    strobe(GRN_LED, 250, 300);
+    strobe(GRN_LED, 250, 30);
   }
 
   mod3 = (mod3 + 1) % 3;

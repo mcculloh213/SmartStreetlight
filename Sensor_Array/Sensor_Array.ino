@@ -62,7 +62,7 @@
                                          *  D13 - UNO
                                          */
 
-#define SD_PIN                4        /**
+#define SD_PIN                53        /**
                                          *  Slave Select pin
                                          *  D10 - UNO
                                          */
@@ -105,7 +105,7 @@
                                          *  Time interval (ms) between each sample
                                          */
 
-#define FILE_NAME          "SNRS.txt"   /**
+#define FILE_NAME          "BLOB.TXT"   /**
                                          *  File name on SD card
                                          */
 
@@ -203,7 +203,7 @@ String DS3234timestamp() {
   ts += String(rtc.month());
   ts += "/";
   ts += String(rtc.year());
-  ts += "\t";
+  ts += "|";
   ts += String(rtc.hour());
   ts += ":";
   if (rtc.minute() < 10) {
@@ -297,29 +297,29 @@ float getMQ4ppm(float voltage) {
 
 String classification(float pc_read) {
   if (pc_read <= 50) {
-    return "Dark";
+    return "I might as well be staring at the surface of the sun";
   } else if (pc_read > 50 && pc_read <= 200) {
-    return "Dim";
+    return "Bright";
   } else if (pc_read > 200 && pc_read <= 300) {
     return "Light";
   } else if (pc_read > 300 && pc_read <= 800) {
-    return "Bright";
+    return "Dim";
   } else {
-    return "I might as well be staring at the surface of the sun";
+    return "Dark";
   }
 }
 
 int variableBrightnessPct(float pc_read) {
   if (pc_read <= 50) {
-    return 75;
+    return -1;
   } else if (pc_read > 50 && pc_read <= 200) {
-    return 50;
+    return 0;
   } else if (pc_read > 200 && pc_read <= 300) {
     return 25;
   } else if (pc_read > 300 && pc_read <= 800) {
-    return 0;
+    return 50;
   } else {
-    return -1;
+    return 75;
   }
 }
 
@@ -343,14 +343,11 @@ int bootSD() {
     Serial.println("SD card initialization failed.");
 
   } else {
+    if (!SD.exists(FILE_NAME)) {
+      dataFile = SD.open(FILE_NAME, FILE_WRITE);
 
-    dataFile = SD.open(FILE_NAME, FILE_WRITE);
-
-    if (dataFile) {
-      if (!SD.exists(FILE_NAME)) {
-        dataFile.print("Timestamp Date");
-        dataFile.print("\t");
-        dataFile.print("Timestamp Time");
+      if (dataFile) {
+        dataFile.print("Timestamp");
         dataFile.print("\t");
         dataFile.print("MG811 Voltage");
         dataFile.print("\t");
@@ -365,12 +362,16 @@ int bootSD() {
         dataFile.print("Light Level");
         dataFile.print("\t");
         dataFile.print("Description");
-        dataFile.print("\n");
-      }
-      
-      success = 1;
-      dataFile.close();
+        dataFile.print("\n");       
+        dataFile.close();  
+      } else {
+        
+        Serial.println("File found on disc");
+        
+      }  
 
+      success = 1;
+      
     } else {
 
       /* DEBUG: Print data to the console while connected to a computer */
@@ -451,7 +452,7 @@ void loop() {
     avg_ch4 /= READ_SAMPLE_INTERVAL;
     avg_ldr /= READ_SAMPLE_INTERVAL;
 
-    if (flag_sd) {
+    if (flag_sd || dataFile) {
       dataFile.print(String(timestamp));
       dataFile.print("\t");
       dataFile.print(String(avg_co2));
@@ -485,12 +486,15 @@ void loop() {
       Serial.print(String(variableBrightnessPct(avg_ldr)));
       Serial.print("\t");
       Serial.print(classification(avg_ldr));
-      if (flag_sd) {
+      if (flag_sd || dataFile) {
         Serial.print("\t");
         Serial.print("Data written to file");
       }
       Serial.print("\n");
     }
   }
+
+  closeFile();
+  
   delay(5000); 
 }

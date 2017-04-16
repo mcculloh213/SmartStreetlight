@@ -1,11 +1,9 @@
 /**
  *  Author: H.D. "Chip" McCullough IV
  *   Board: Arduino UNO R3
- * Sensors: ArduCAM Mini OV5642 Camera Sensor
- *          Catalex MicroSD Card Adapter
+ * Sensors: Keyestudio PIR Motion Sensor
  *          
- * This sketch is adapted from the example sketch ArduCAM_Mini_Capture2SD.ino sketch
- *   to use only the OV5642 sensor.
+ * 
  */
  
 /************************Libraries**************************************************/
@@ -14,11 +12,15 @@
 
 /************************Hardware Related Macros************************************/
 
+#define SENSOR_PIN            3
+
+#define INDUCTOR             13
+
 #define AC_PIN               11         /**
                                          * Output pin to Triac
                                          */
                                          
-#define FREQ_STEP            65         /**
+#define FREQ_STEP            75         /**
                                          * Delay per birghtnes step in ms,
                                          *   given American grid is 60 Hz.
                                          */
@@ -31,6 +33,8 @@ volatile boolean zero_cross=0;  // Boolean to store a "switch" to tell us if we 
 int AC_pin = 11;                // Output to Opto Triac
 int dim = 0;                    // Dimming level (0-128)  0 = on, 128 = 0ff
 int inc=1;                      // counting up or down, 1=up, -1=down
+
+float power_level = 1.00;       // 0 = off, 0.25 = quarter, 0.50 = half, 0.75 = three-quarter, 1.00 = full
 
 int freqStep = 75;    // This is the delay-per-brightness step in microseconds.
                       // For 60 Hz it should be 65
@@ -46,15 +50,26 @@ int freqStep = 75;    // This is the delay-per-brightness step in microseconds.
 // (120 Hz=8333uS) / 128 brightness steps = 65 uS / brightness step
 // (100Hz=10000uS) / 128 steps = 75uS/step
 
+void motion_detector() {
+  int state = digitalRead(SENSOR_PIN);
+  digitalWrite(INDUCTOR, state);
+  if (state) {
+    
+  }
+}
+
 void setup() {                                      // Begin setup
-  pinMode(AC_pin, OUTPUT);                          // Set the Triac pin as output
+  pinMode(SENSOR_PIN, INPUT);
+  pinMode(INDUCTOR, OUTPUT);
+  pinMode(AC_PIN, OUTPUT);                          // Set the Triac pin as output
   attachInterrupt(0, zero_cross_detect, RISING);    // Attach an Interupt to Pin 2 (interupt 0) for Zero Cross Detection
   Timer1.initialize(freqStep);                      // Initialize TimerOne library for the freq we need
   Timer1.attachInterrupt(dim_check, freqStep);      
   // Use the TimerOne Library to attach an interrupt
   // to the function we use to check to see if it is 
   // the right time to fire the triac.  This function 
-  // will now run every freqStep in microseconds.                                            
+  // will now run every freqStep in microseconds.  
+  Serial.begin(9600);                                          
 }
 
 void zero_cross_detect() {    
@@ -67,7 +82,7 @@ void zero_cross_detect() {
 void dim_check() {                   
   if(zero_cross == true) {              
     if(i>=dim) {                     
-      digitalWrite(AC_pin, HIGH); // turn on light       
+      digitalWrite(AC_PIN, HIGH); // turn on light       
       i=0;  // reset time step counter                         
       zero_cross = false; //reset zero cross detection
     } 

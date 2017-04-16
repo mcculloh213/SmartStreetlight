@@ -43,6 +43,26 @@
                                          *  be high
                                          */
 
+#define RED_LED               5         /**
+                                         *  Red LED -- ERROR
+                                         */
+                                         
+#define YLW_LED               6         /**
+                                         *  Yellow LED -- WRITING TO SD
+                                         */
+                                         
+#define GRN_LED               7         /**
+                                         *  Green LED -- OK
+                                         */
+                                         
+#define BLU_LED               8         /**
+                                         *  Blue LED -- SYSTEM FAILURE
+                                         */
+                                         
+#define PUR_LED               9         /**
+                                         *  Purple/UV LED -- SYSTEM ON
+                                         */
+
 #define RTC_PIN               5         /**
                                          * Arduino DeadOn DS3234 RTC
                                          */
@@ -139,19 +159,123 @@ float Rs;
  */
 volatile float Ro;
 
+/**
+ * TODO: REMOVE flag_sd -- Deprecated
+ */
 volatile int flag_sd;
 
+/**
+ * Timestamp variable
+ */
 String timestamp;
 
+/**
+ * Average voltage reading from MG-811 Sensor
+ */
 volatile float avg_co2;
 
+/**
+ * Average voltage reading from MQ-4 Sensor
+ */
 volatile float avg_ch4;
 
+/**
+ * Average light voltage reading from LDR Sensor
+ */
 volatile float avg_ldr;
 
-File dataFile;                                 /**
-                                                *  File variable for data logging
-                                                */
+/**
+ * File variable for data logging
+ */
+File dataFile;
+
+/**
+ * Function: flash
+ * ---------------
+ * Flash <led_pin> once for <duration>
+ * 
+ *  led_pin: Pin location of LED
+ * duration: Length of led on in milliseconds
+ */
+void flash(int led_pin, int duration) {
+   digitalWrite(led_pin, HIGH);
+   delay(duration);
+   digitalWrite(led_pin, LOW);
+}
+
+/**
+ * Function: flash_all
+ * -------------------
+ * Flash all LEDs
+ */
+void flash_all(int red, int ylw, int grn, int duration) {
+  digitalWrite(red, HIGH);
+  digitalWrite(ylw, HIGH);
+  digitalWrite(grn, HIGH);
+  delay(duration);
+  digitalWrite(red, LOW);
+  digitalWrite(ylw, LOW);
+  digitalWrite(grn, LOW);
+}
+
+/**
+ * Function: strobe
+ * ----------------
+ * Strobe <led_pin>, flashing <strobes> times, each on lasting for <duration>
+ */
+void strobe(int led_pin, int duration, int strobes) {
+  for (int i = 0; i < strobes; i++) {
+    digitalWrite(led_pin, HIGH);
+    delay(duration);
+    digitalWrite(led_pin, LOW);
+  }
+}
+
+/**
+ * Function: sos
+ * -------------
+ * Flash morse code for SOS
+ */
+void sos(int led_pin) {
+  digitalWrite(led_pin, HIGH);
+  delay(2000);
+  digitalWrite(led_pin, LOW);
+  delay(500);
+  digitalWrite(led_pin, HIGH);
+  delay(2000);
+  digitalWrite(led_pin, LOW);
+  delay(500);
+  digitalWrite(led_pin, HIGH);
+  delay(2000);
+  digitalWrite(led_pin, LOW);
+  delay(500);
+
+  digitalWrite(led_pin, HIGH);
+  delay(750);
+  digitalWrite(led_pin, LOW);
+  delay(500);
+  digitalWrite(led_pin, HIGH);
+  delay(750);
+  digitalWrite(led_pin, LOW);
+  delay(500);
+  digitalWrite(led_pin, HIGH);
+  delay(750);
+  digitalWrite(led_pin, LOW);
+  delay(500);
+
+  digitalWrite(led_pin, HIGH);
+  delay(2000);
+  digitalWrite(led_pin, LOW);
+  delay(500);
+  digitalWrite(led_pin, HIGH);
+  delay(2000);
+  digitalWrite(led_pin, LOW);
+  delay(500);
+  digitalWrite(led_pin, HIGH);
+  delay(2000);
+  digitalWrite(led_pin, LOW);
+  delay(500);
+}
 
 /**
  * Function: MG811Reading

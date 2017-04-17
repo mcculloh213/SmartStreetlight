@@ -12,13 +12,19 @@
 
 /************************Hardware Related Macros************************************/
 
-#define SENSOR_PIN            3
+#define LDR_PIN              A0
 
-#define INDUCTOR             13
+#define ZC_PIN                2
+
+#define MS_PIN                3
 
 #define AC_PIN               11         /**
                                          * Output pin to Triac
                                          */
+
+#define SENSOR_PIN            8
+
+#define INDUCTOR              9
                                          
 #define FREQ_STEP            75         /**
                                          * Delay per birghtnes step in ms,
@@ -28,20 +34,19 @@
 /************************Software Related Macros************************************/
 /************************Application Related Macros*********************************/
 
-volatile int i=0;               // Variable to use as a counter volatile as it is in an interrupt
-volatile boolean zero_cross=0;  // Boolean to store a "switch" to tell us if we have crossed zero
-int AC_pin = 11;                // Output to Opto Triac
-int dim = 0;                    // Dimming level (0-128)  0 = on, 128 = 0ff
-int inc=1;                      // counting up or down, 1=up, -1=down
+volatile int i = 0;               // Variable to use as a counter volatile as it is in an interrupt
+volatile boolean zero_cross = 0;  // Boolean to store a "switch" to tell us if we have crossed zero
+int dim = 0;                      // Dimming level (0-128)  0 = on, 128 = 0ff
+int inc=1;                        // counting up or down, 1=up, -1=down
 
-float power_level = 1.00;       // 0 = off, 0.25 = quarter, 0.50 = half, 0.75 = three-quarter, 1.00 = full
+float power_level = 1.00;         // 0 = off, 0.25 = quarter, 0.50 = half, 0.75 = three-quarter, 1.00 = full
 
 int freqStep = 75;    // This is the delay-per-brightness step in microseconds.
                       // For 60 Hz it should be 65
 // It is calculated based on the frequency of your voltage supply (50Hz or 60Hz)
 // and the number of brightness steps you want. 
 // 
-// Realize that there are 2 zerocrossing per cycle. This means
+// There are 2 zerocrossing per cycle. This means a
 // zero crossing happens at 120Hz for a 60Hz supply or 100Hz for a 50Hz supply. 
 
 // To calculate freqStep divide the length of one full half-wave of the power
@@ -50,21 +55,35 @@ int freqStep = 75;    // This is the delay-per-brightness step in microseconds.
 // (120 Hz=8333uS) / 128 brightness steps = 65 uS / brightness step
 // (100Hz=10000uS) / 128 steps = 75uS/step
 
-void motion_detector() {
-  int state = digitalRead(SENSOR_PIN);
-  digitalWrite(INDUCTOR, state);
-  if (state) {
-    
+int variableBrightnessPct(float pc_read) {
+  if (pc_read <= 200) {
+    return 0;
+  } else if (pc_read > 200 && pc_read <= 300) {
+    return 25;
+  } else if (pc_read > 300 && pc_read <= 800) {
+    return 50;
+  } else {
+    return 75;
   }
 }
 
-void setup() {                                      // Begin setup
+void motion_detector() {
+  int state = digitalRead(SENSOR_PIN);
+  power_level = variableBrightnessPct(analogRead(LDR_PIN));
+  digitalWrite(INDUCTOR, state);
+  if (state && power_level < 1.00) {
+    power_level += 0.25;
+  }
+}
+
+void setup() {                                                                  // Begin setup
   pinMode(SENSOR_PIN, INPUT);
   pinMode(INDUCTOR, OUTPUT);
-  pinMode(AC_PIN, OUTPUT);                          // Set the Triac pin as output
-  attachInterrupt(0, zero_cross_detect, RISING);    // Attach an Interupt to Pin 2 (interupt 0) for Zero Cross Detection
-  Timer1.initialize(freqStep);                      // Initialize TimerOne library for the freq we need
-  Timer1.attachInterrupt(dim_check, freqStep);      
+  pinMode(AC_PIN, OUTPUT);                                                      // Set the Triac pin as output
+  attachInterrupt(digitalPinToInterrupt(ZC_PIN), zero_cross_detect, RISING);    // Attach an Interupt for Zero Cross Detection
+  attachInterrupt(digitalPinToInterrupt(MS_PIN), motion_detector, RISING);
+  Timer1.initialize(FREQ_STEP);                                                 // Initialize TimerOne library for the freq we need
+  Timer1.attachInterrupt(dim_check, FREQ_STEP);      
   // Use the TimerOne Library to attach an interrupt
   // to the function we use to check to see if it is 
   // the right time to fire the triac.  This function 
@@ -74,16 +93,16 @@ void setup() {                                      // Begin setup
 
 void zero_cross_detect() {    
   zero_cross = true;               // set the boolean to true to tell our dimming function that a zero cross has occured
-  i=0;
-  digitalWrite(AC_pin, LOW);       // turn off TRIAC (and AC)
+  i = 0;
+  digitalWrite(AC_PIN, LOW);       // turn off TRIAC (and AC)
 }                                 
 
 // Turn on the TRIAC at the appropriate time
 void dim_check() {                   
   if(zero_cross == true) {              
-    if(i>=dim) {                     
+    if(i >= (int) power_level * dim) {                     
       digitalWrite(AC_PIN, HIGH); // turn on light       
-      i=0;  // reset time step counter                         
+      i = 0;  // reset time step counter                         
       zero_cross = false; //reset zero cross detection
     } 
     else {
